@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_file
 import yt_dlp
 import os
-
+app = Flask(__name__)
 @app.route("/", methods=["GET", "POST"])
 def index():
     message = ""
