@@ -1,30 +1,53 @@
-from flask import Flask, render_template, request, send_file
-import yt_dlp
 import os
+from flask import Flask, request, render_template, send_file
+import subprocess
+import uuid
+
 app = Flask(__name__)
+
+DOWNLOAD_DIR = "downloads"
+
+# Ensure the downloads folder exists
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    message = ""
     if request.method == "POST":
-        url = request.form.get("insta_url")
-        if not url:
-            message = "Please enter a valid Instagram URL."
-        else:
-            try:
-                os.makedirs("downloads/instagram", exist_ok=True)
+        url = request.form["url"]
 
-                ydl_opts = {
-                    'outtmpl': 'downloads/instagram/%(title)s.%(ext)s',
-                    'merge_output_format': 'mp4'
-                }
+        # 1️⃣ Get cookies from environment
+        cookies = os.getenv("INSTAGRAM_COOKIES")
 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info_dict = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(info_dict)
+        if not cookies:
+            return "❌ ERROR: No Instagram cookies found. Please set the INSTAGRAM_COOKIES environment variable."
 
-                message = f"✅ Download complete! Check the downloads folder."
+        # 2️⃣ Format cookies (replace \n with actual newlines)
+        cookies = cookies.replace("\\n", "\n")
 
-            except Exception as e:
-                message = f"❌ Error: {e}"
+        # 3️⃣ Write cookies.txt for yt-dlp
+        cookies_file = "cookies.txt"
+        with open(cookies_file, "w") as f:
+            f.write(cookies)
 
-    return render_template("index.html", message=message)
+        # 4️⃣ Generate a unique output file name
+        output_file = os.path.join(DOWNLOAD_DIR, f"{uuid.uuid4()}.mp4")
+
+        # 5️⃣ Build yt-dlp command
+        command = [
+            "yt-dlp",
+            "--cookies", cookies_file,
+            "-f", "best",
+            "-o", output_file,
+            url
+        ]
+
+        # 6️⃣ Run yt-dlp
+        try:
+            subprocess.run(command, check=True)
+        except subprocess.CalledProcessError as e:
+            return f"❌ ERROR: yt-dlp failed: {str(e)}"
+
+        # 7️⃣ Serve the downloaded file
+        return send_file(output_file, as_attachment=True)
+
+    return render_template("index.html")
