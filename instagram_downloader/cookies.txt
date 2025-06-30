@@ -1,0 +1,5 @@
+# Netscape HTTP Cookie File
+.instagram.com	TRUE	/	FALSE	0	sessionid	72174916845%3AJOLBeqP93SKhvH%3A13%3AAYc_c5yWr_STBTXbJPzQCs9Cogtvi_hTSzdoxyrkvA
+.instagram.com	TRUE	/	FALSE	0	ds_user_id	72174916845
+.instagram.com	TRUE	/	FALSE	0	csrftoken	GmqD6gxlYUkmjq05KKssx4
+.instagram.com	TRUE	/	FALSE	0	mid	aFqqzAALAAGF1qhj-ZOi-9ubg4rW
