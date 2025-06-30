@@ -1,9 +1,6 @@
-from flask import Flask, render_template, request
-import instaloader
+from flask import Flask, render_template, request, send_file
+import yt_dlp
 import os
-from urllib.parse import urlparse
-
-app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -14,29 +11,20 @@ def index():
             message = "Please enter a valid Instagram URL."
         else:
             try:
-                L = instaloader.Instaloader()
+                os.makedirs("downloads/instagram", exist_ok=True)
 
-                # Optional: Uncomment and use your login for private posts
-                # L.login('YOUR_USERNAME', 'YOUR_PASSWORD')
+                ydl_opts = {
+                    'outtmpl': 'downloads/instagram/%(title)s.%(ext)s',
+                    'merge_output_format': 'mp4'
+                }
 
-                # Extract shortcode
-                path_parts = urlparse(url).path.strip("/").split("/")
-                if "p" in path_parts or "reel" in path_parts:
-                    shortcode = path_parts[-1] if path_parts[-1] else path_parts[-2]
-                else:
-                    return "Invalid Instagram URL."
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info_dict = ydl.extract_info(url, download=True)
+                    filename = ydl.prepare_filename(info_dict)
 
-                post = instaloader.Post.from_shortcode(L.context, shortcode)
-
-                os.makedirs("downloads", exist_ok=True)
-                L.download_post(post, target="downloads")
-
-                message = "✅ Download complete! Check the server's downloads folder."
+                message = f"✅ Download complete! Check the downloads folder."
 
             except Exception as e:
                 message = f"❌ Error: {e}"
 
     return render_template("index.html", message=message)
-
-if __name__ == "__main__":
-    app.run(debug=True)
